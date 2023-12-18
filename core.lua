@@ -31,6 +31,15 @@ ConROC.Textures = {
 };
 ConROC.FinalTexture = nil;
 
+ConROC.IsClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+
+ConROC.Seasons ={
+	IsWotlk = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC, 
+	IsEra = ConROC.IsClassic and (not C_Seasons.HasActiveSeason()),
+	IsSoD = ConROC.IsClassic and C_Seasons.HasActiveSeason() and (C_Seasons.GetActiveSeason() ~= Enum.SeasonID.Hardcore),
+	IsHardcore = C_GameRules and C_GameRules.IsHardcoreActive(),
+}
+
 ConROC.Colors = {
 	Info = '|cFF1394CC',
 	Error = '|cFFF0563D',
@@ -887,8 +896,11 @@ function ConROC:PLAYER_REGEN_DISABLED()
 end
 
 function ConROC:LEARNED_SPELL_IN_TAB()
+	ConROC:UpdateSpellID();
 	ConROC:ButtonFetch();
-	ConROC:SpellMenuUpdate();
+	C_Timer.After(3, function()
+		ConROC:SpellMenuUpdate(true); -- new spell learned
+	end);
 end
 
 function ConROC:ButtonFetch()

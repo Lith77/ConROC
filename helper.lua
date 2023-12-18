@@ -559,7 +559,7 @@ end
 
 function ConROC:AbilityReady(spellid, timeShift, pet)
 	local cd, maxCooldown = ConROC:Cooldown(spellid, timeShift + 1);
-	local known = IsPlayerSpell(spellid);
+	local known = IsPlayerSpell(spellid) or IsSpellKnownOrOverridesKnown(spellid);
 	local usable, notEnough = IsUsableSpell(spellid);
 	local castTimeMilli = select(4, GetSpellInfo(spellid));
 	local rdy = false;

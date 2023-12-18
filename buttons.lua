@@ -39,7 +39,7 @@ function ConROCTTOnEnter(self)
 			GameTooltip:AddLine('Click to show/hide options.', 1, 1, 1, true)
 			GameTooltip:AddLine(" ", 1, 1, 1, true)
 		end
-		GameTooltip:AddLine('Hold Alt to move frame', 1, 1, 1, true)
+		GameTooltip:AddLine('/ConROCUL to lock/unlock', 1, 1, 1, true)
 	end
 
 	if ttFrameName == "ConROC_SingleButton" then --Single target rotation button
@@ -383,10 +383,12 @@ function ConROC:CreateDisplayWindow(parent, id)
 	local spellName, _, spellTexture = GetSpellInfo(id);
 	local _, Class = UnitClass("player");
 	local Color = RAID_CLASS_COLORS[Class];
-		if not frame then
+		if not frame and not _G['ConROC_WindowSpell_' .. id] then
 			frame = CreateFrame('Frame', 'ConROC_WindowSpell_' .. id, parent);
 			fontstring = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
 			fontkey = frame:CreateFontString("ConROC_HotKey_" .. id, "ARTWORK", "GameFontHighlightLarge");
+		elseif _G['ConROC_WindowSpell_' .. id] then
+			frame = _G['ConROC_WindowSpell_' .. id];
 		end
 
 	frame:SetParent(ConROCWindow);
@@ -524,10 +526,12 @@ function ConROC:CreateDefWindow(parent, id)
 	local spellName, _, spellTexture = GetSpellInfo(id);
 	local _, Class = UnitClass("player");
 	local Color = RAID_CLASS_COLORS[Class];
-		if not frame then
+		if not frame and not _G['ConROC_DefWindowSpell_' .. id] then
 			frame = CreateFrame('Frame', 'ConROC_DefWindowSpell_' .. id, parent);
 			fontstring = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
 			fontkey = frame:CreateFontString("ConROC_DefHotKey_" .. id, "ARTWORK", "GameFontHighlight");
+		elseif _G['ConROC_DefWindowSpell_' .. id] then
+			frame = _G['ConROC_DefWindowSpell_' .. id]
 		end
 
 	frame:SetParent(ConROCDefenseWindow);
@@ -688,9 +692,7 @@ function ConROC:SpellmenuFrame()
 		frame:RegisterForDrag("LeftButton")
 		frame:SetScript("OnDragStart", function(self)
 			if ConROC.db.profile.unlockWindow then
-				if (IsAltKeyDown()) then
-					frame:StartMoving()
-				end
+				frame:StartMoving()
 			end
 		end)
 		frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
@@ -724,9 +726,7 @@ function ConROC:SpellmenuFrame()
 		frameTitle:RegisterForDrag("LeftButton")
 		frameTitle:SetScript("OnDragStart", function(self)
 			if ConROC.db.profile.unlockWindow then
-				if (IsAltKeyDown()) then
-					self:GetParent():StartMoving()
-				end
+				self:GetParent():StartMoving()
 			end
 		end)
 		frameTitle:SetScript("OnDragStop", function(self)
@@ -776,9 +776,7 @@ function ConROC:SpellmenuFrame()
 
 		otbutton:SetScript("OnMouseDown", function (self, otbutton, up)
 			if ConROC.db.profile.unlockWindow then
-				if (IsAltKeyDown()) then
 					frame:StartMoving()
-				end
 			end
 		end)
 
@@ -786,7 +784,7 @@ function ConROC:SpellmenuFrame()
 			if ConROC.db.profile.unlockWindow then
 				frame:StopMovingOrSizing();
 			end
-		if not (IsAltKeyDown()) then
+		--if not (IsAltKeyDown()) then
 			self:Hide();
 			frameTitle:Show();
 			frame:SetSize(210, 300);
@@ -794,7 +792,7 @@ function ConROC:SpellmenuFrame()
 			optionsOpened = true;
 			ConROCSpellmenuFrame_CloseButton:Show();
 			ConROC:SpellMenuUpdate();
-			end
+		--	end
 		end)
 
 	local tbutton = CreateFrame("Button", 'ConROCSpellmenuFrame_CloseButton', frame)
@@ -836,6 +834,47 @@ function ConROC:SpellmenuFrame()
 			ConROCSpellmenuFrame_OpenButton:Show();
 			optionsOpened = false;
 		end)
+--[[
+	local lockButton = CreateFrame("Button", 'ConROCSpellmenuFrame_LockButton', frame)
+    lockButton:SetFrameStrata('MEDIUM')
+    lockButton:SetFrameLevel('6')
+    lockButton:SetPoint("TOPLEFT", frame, "TOPLEFT", 5, -5)
+    lockButton:SetSize(20, 20)
+    lockButton:SetAlpha(1)
+
+    local lockTexture = lockButton:CreateTexture(nil, "OVERLAY")
+    lockTexture:SetAllPoints()
+    lockButton.lockTexture = lockTexture
+
+    lockButton:SetScript("OnEnter", ConROCTTOnEnter)
+    lockButton:SetScript("OnLeave", ConROCTTOnLeave)
+
+    lockButton:SetScript("OnClick", function()
+        -- Toggle the unlockWindow status
+        ConROC.db.profile.unlockWindow = not ConROC.db.profile.unlockWindow
+        -- Update the lock texture based on the new status
+        if ConROC.db.profile.unlockWindow then
+            lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\unlockedLockTexture")
+        else
+            lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\lockedLockTexture")
+        end
+    end)
+
+    -- Initialize the lock texture based on initial unlockWindow status
+    if ConROC.db.profile.unlockWindow then
+        lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\unlockedLockTexture")
+    else
+        lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\lockedLockTexture")
+    end 
+--]]
+end
+function ConROC:closeSpellmenu()
+	ConROCSpellmenuFrame_CloseButton:Hide();
+	ConROCSpellmenuFrame_Title:Hide();
+	ConROCSpellmenuClass:Hide();
+	ConROCSpellmenuFrame:SetSize((90) + 14, (15) + 14);
+	ConROCSpellmenuFrame_OpenButton:Show();
+	optionsOpened = false;
 end
 local slotsUsed = {}
 function ConROC:FindKeybinding(id,caller)
