@@ -41,6 +41,14 @@ function ConROCTTOnEnter(self)
 		end
 		GameTooltip:AddLine('/ConROCUL to lock/unlock', 1, 1, 1, true)
 	end
+	if ttFrameName == "ConROCSpellmenuFrame_LockButton" then
+		GameTooltip:SetText("ConROC Rotation options")  -- This sets the top line of text, in gold.
+		if ttFrameName == "ConROCSpellmenuFrame_OpenButton" then
+			GameTooltip:AddLine('Click to show/hide options.', 1, 1, 1, true)
+			GameTooltip:AddLine(" ", 1, 1, 1, true)
+		end
+		GameTooltip:AddLine('Click to lock/unlock', 1, 1, 1, true)
+	end
 
 	if ttFrameName == "ConROC_SingleButton" then --Single target rotation button
 		GameTooltip:SetText("ConROC Target Toggle")  -- This sets the top line of text, in gold.
@@ -113,13 +121,29 @@ function TPWOnLeave(self)
 	ConROCPurgeWindow.texture:SetVertexColor(.1, .1, .1);
 end
 
+function ConROC:UpdateLockTexture()
+    local lockButton = ConROCSpellmenuFrame_LockButton
+    if ConROC.db.profile.unlockWindow then
+    	lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\padlock_open")
+    else
+    	lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\padlock_closed")
+    end
+
+end
 function ConROC:SlashUnlock()
 	if not ConROC.db.profile.unlockWindow then
 		ConROC.db.profile.unlockWindow = true;
 	else
 		ConROC.db.profile.unlockWindow = false;
 	end
-
+	ConROC:UpdateLockTexture()
+	if IsAddOnLoaded("ConROC_Rogue") or IsAddOnLoaded("ConROC_Shaman") then
+		if ConROC.db.profile.unlockWindow then
+        	ConROCApplyPoisonFrame_DragFrame:Show();
+	    else
+        	ConROCApplyPoisonFrame_DragFrame:Hide();
+	    end
+	end
 	ConROCWindow:EnableMouse(ConROC.db.profile.unlockWindow);
 	ConROCDefenseWindow:EnableMouse(ConROC.db.profile.unlockWindow);
 	ConROCPurgeWindow:EnableMouse(ConROC.db.profile.unlockWindow);
@@ -834,39 +858,37 @@ function ConROC:SpellmenuFrame()
 			ConROCSpellmenuFrame_OpenButton:Show();
 			optionsOpened = false;
 		end)
---[[
-	local lockButton = CreateFrame("Button", 'ConROCSpellmenuFrame_LockButton', frame)
+
+	local lockButton = CreateFrame("Button", 'ConROCSpellmenuFrame_LockButton', nil)
     lockButton:SetFrameStrata('MEDIUM')
     lockButton:SetFrameLevel('6')
-    lockButton:SetPoint("TOPLEFT", frame, "TOPLEFT", 5, -5)
-    lockButton:SetSize(20, 20)
-    lockButton:SetAlpha(1)
+    lockButton:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", -2, 5)
+    lockButton:SetSize(10, 10)
+    lockButton:SetAlpha(0.5)
 
     local lockTexture = lockButton:CreateTexture(nil, "OVERLAY")
     lockTexture:SetAllPoints()
     lockButton.lockTexture = lockTexture
 
-    lockButton:SetScript("OnEnter", ConROCTTOnEnter)
-    lockButton:SetScript("OnLeave", ConROCTTOnLeave)
+    lockButton:SetScript("OnEnter", function(self)
+	    ConROCTTOnEnter(self)
+	    self:SetAlpha(1) -- Set alpha to max on hover
+	end)
+
+	lockButton:SetScript("OnLeave", function(self)
+	    ConROCTTOnLeave(self)
+	    self:SetAlpha(0.5) -- Reset alpha to half on mouse out
+	end)
 
     lockButton:SetScript("OnClick", function()
         -- Toggle the unlockWindow status
-        ConROC.db.profile.unlockWindow = not ConROC.db.profile.unlockWindow
-        -- Update the lock texture based on the new status
-        if ConROC.db.profile.unlockWindow then
-            lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\unlockedLockTexture")
-        else
-            lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\lockedLockTexture")
-        end
+        ConROC:SlashUnlock()
     end)
 
     -- Initialize the lock texture based on initial unlockWindow status
-    if ConROC.db.profile.unlockWindow then
-        lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\unlockedLockTexture")
-    else
-        lockButton.lockTexture:SetTexture("Interface\\AddOns\\ConROC\\images\\lockedLockTexture")
-    end 
---]]
+    ConROC:UpdateLockTexture()
+    lockButton:Show();
+
 end
 function ConROC:closeSpellmenu()
 	ConROCSpellmenuFrame_CloseButton:Hide();

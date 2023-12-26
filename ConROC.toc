@@ -6,5 +6,5 @@
 ## SavedVariables: ConROCPreferences
 ## OptionalDependencies: Bartender4, ElvUI, ButtonForge
 
-Classic\Libs.xml
+Libs.xml
 
